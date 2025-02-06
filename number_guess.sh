@@ -16,7 +16,7 @@ then
   $PSQL "INSERT INTO users(username, games_played, best_game) VALUES('$USERNAME', 0, NULL)"
 else
   IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
-  
+
   if [[ -z $BEST_GAME ]]
   then
     echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took 0 guesses."
@@ -58,9 +58,11 @@ do
       USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username='$USERNAME'")
       IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
 
+      # Incrementar juegos jugados
       ((GAMES_PLAYED++))
       $PSQL "UPDATE users SET games_played=$GAMES_PLAYED WHERE username='$USERNAME'"
 
+      # Actualizar el mejor puntaje si es necesario
       if [[ -z $BEST_GAME || $NUMBER_OF_GUESSES -lt $BEST_GAME ]]
       then
         $PSQL "UPDATE users SET best_game=$NUMBER_OF_GUESSES WHERE username='$USERNAME'"
