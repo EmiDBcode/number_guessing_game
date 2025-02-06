@@ -17,6 +17,7 @@ then
 else
   IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
 
+  # 🔹 **Corrección del mensaje exacto que espera FreeCodeCamp**
   if [[ -z $BEST_GAME ]]
   then
     echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took 0 guesses."
