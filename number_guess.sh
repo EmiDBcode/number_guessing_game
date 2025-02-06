@@ -5,7 +5,6 @@ PSQL="psql -X --username=freecodecamp --dbname=number_guess -t --tuples-only -c"
 GAME_INIT() {
   SECRET_NUMBER=$(( RANDOM % 1000 + 1 ))
 
-  # ✅ Asegurar que el mensaje de entrada es EXACTAMENTE lo que FreeCodeCamp espera
   echo "Enter your username:"
   read USERNAME
 
@@ -18,18 +17,13 @@ GAME_INIT() {
     $PSQL "INSERT INTO users(username) VALUES('$USERNAME')"
     USER_ID=$($PSQL "SELECT user_id FROM users WHERE username='$USERNAME'")
     GAMES_PLAYED=0
-    BEST_GAME="None"
+    BEST_GAME="N/A"
   else
     USER_ID=$USER_DATA
-    GAMES_PLAYED=$($PSQL "SELECT COUNT(*) FROM games WHERE user_id=$USER_ID")
-    BEST_GAME=$($PSQL "SELECT MIN(tries) FROM games WHERE user_id=$USER_ID")
+    GAMES_PLAYED=$($PSQL "SELECT COUNT(*) FROM games WHERE user_id=$USER_ID" | xargs)
+    BEST_GAME=$($PSQL "SELECT COALESCE(MIN(tries), 'N/A') FROM games WHERE user_id=$USER_ID" | xargs)
 
-    if [[ -z $BEST_GAME ]]
-    then
-      BEST_GAME="None"
-    fi
-
-    # ✅ Asegurar que el mensaje es EXACTAMENTE como lo espera FreeCodeCamp
+    # ✅ Corregimos el formato eliminando espacios extra
     echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
   fi
 
