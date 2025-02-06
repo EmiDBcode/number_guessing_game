@@ -6,24 +6,23 @@ PSQL="psql --username=freecodecamp --dbname=number_guess -t --no-align -c"
 echo "Enter your username:"
 read USERNAME
 
-# Buscar si el usuario ya existe
+# Buscar si el usuario ya existe en la base de datos
 USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username='$USERNAME'")
 
-# Si el usuario no existe
+# Si el usuario no existe, lo creamos en la base de datos
 if [[ -z $USER_DATA ]]
 then
   echo "Welcome, $USERNAME! It looks like this is your first time here."
   $PSQL "INSERT INTO users(username, games_played, best_game) VALUES('$USERNAME', 0, NULL)"
 else
-  echo "$USER_DATA" | while IFS="|" read GAMES_PLAYED BEST_GAME
-  do
-    if [[ -z $BEST_GAME ]]
-    then
-      echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and you have not set a best game record yet."
-    else
-      echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
-    fi
-  done
+  IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
+  
+  if [[ -z $BEST_GAME ]]
+  then
+    echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took 0 guesses."
+  else
+    echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
+  fi
 fi
 
 # Generar el número aleatorio
@@ -54,20 +53,18 @@ do
       echo "It's lower than that, guess again:"
     else
       echo "You guessed it in $NUMBER_OF_GUESSES tries. The secret number was $SECRET_NUMBER. Nice job!"
-
-      # Obtener datos del usuario
+      
+      # Obtener datos actuales del usuario
       USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username='$USERNAME'")
+      IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
 
-      echo "$USER_DATA" | while IFS="|" read GAMES_PLAYED BEST_GAME
-      do
-        ((GAMES_PLAYED++))
-        $PSQL "UPDATE users SET games_played=$GAMES_PLAYED WHERE username='$USERNAME'"
+      ((GAMES_PLAYED++))
+      $PSQL "UPDATE users SET games_played=$GAMES_PLAYED WHERE username='$USERNAME'"
 
-        if [[ -z $BEST_GAME || $NUMBER_OF_GUESSES -lt $BEST_GAME ]]
-        then
-          $PSQL "UPDATE users SET best_game=$NUMBER_OF_GUESSES WHERE username='$USERNAME'"
-        fi
-      done
+      if [[ -z $BEST_GAME || $NUMBER_OF_GUESSES -lt $BEST_GAME ]]
+      then
+        $PSQL "UPDATE users SET best_game=$NUMBER_OF_GUESSES WHERE username='$USERNAME'"
+      fi
 
       exit 0
     fi
