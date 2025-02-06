@@ -4,27 +4,26 @@ PSQL="psql -X --username=freecodecamp --dbname=number_guess -t --tuples-only -c"
 
 START_GAME() {
   SECRET_NUMBER=$(( RANDOM % 1000 + 1 ))
-  echo -e "\nEnter your username:"
+  echo -e "Enter your username:"
   read USERNAME
 
   # Obtener datos del usuario
   USER_DATA=$($PSQL "SELECT games_played, best_game FROM users WHERE username='$USERNAME'")
   
-  # Si el usuario no existe
   if [[ -z $USER_DATA ]]
   then
     echo -e "\nWelcome, $USERNAME! It looks like this is your first time here."
     $PSQL "INSERT INTO users(username, games_played, best_game) VALUES('$USERNAME', 0, NULL)"
   else
-    echo "$USER_DATA" | while IFS="|" read GAMES_PLAYED BEST_GAME
-    do
-      if [[ -z $BEST_GAME ]]
-      then
-        echo -e "\nWelcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took 0 guesses."
-      else
-        echo -e "\nWelcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
-      fi
-    done
+    IFS="|" read GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
+
+    # ✅ Asegurar el formato EXACTO esperado por FreeCodeCamp
+    if [[ -z $BEST_GAME ]]
+    then
+      echo -e "\nWelcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took 0 guesses."
+    else
+      echo -e "\nWelcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
+    fi
   fi
 
   echo -e "\nGuess the secret number between 1 and 1000:"
