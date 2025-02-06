@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PSQL="psql -X --username=freecodecamp --dbname=number_guess -t --no-align -c"
+PSQL="psql -X --username=freecodecamp --dbname=number_guess -t --tuples-only -c"
 
 GAME_INIT() {
   SECRET_NUMBER=$(( RANDOM % 1000 + 1 ))
@@ -9,8 +9,8 @@ GAME_INIT() {
   echo "Enter your username:"
   read USERNAME
 
-  # Obtener el user_id
-  USER_DATA=$($PSQL "SELECT user_id, COUNT(*), MIN(tries) FROM users LEFT JOIN games ON users.user_id=games.user_id WHERE username='$USERNAME' GROUP BY users.user_id")
+  # Obtener datos del usuario
+  USER_DATA=$($PSQL "SELECT user_id FROM users WHERE username='$USERNAME'")
 
   if [[ -z $USER_DATA ]]
   then
@@ -18,20 +18,21 @@ GAME_INIT() {
     $PSQL "INSERT INTO users(username) VALUES('$USERNAME')"
     USER_ID=$($PSQL "SELECT user_id FROM users WHERE username='$USERNAME'")
     GAMES_PLAYED=0
-    BEST_GAME=0
+    BEST_GAME="None"
   else
-    IFS="|" read USER_ID GAMES_PLAYED BEST_GAME <<< "$USER_DATA"
+    USER_ID=$USER_DATA
+    GAMES_PLAYED=$($PSQL "SELECT COUNT(*) FROM games WHERE user_id=$USER_ID")
+    BEST_GAME=$($PSQL "SELECT MIN(tries) FROM games WHERE user_id=$USER_ID")
 
     if [[ -z $BEST_GAME ]]
     then
-      BEST_GAME=0
+      BEST_GAME="None"
     fi
 
     # ✅ Asegurar que el mensaje es EXACTAMENTE como lo espera FreeCodeCamp
     echo "Welcome back, $USERNAME! You have played $GAMES_PLAYED games, and your best game took $BEST_GAME guesses."
   fi
 
-  # ✅ Asegurar que esta línea se imprime correctamente antes de leer la entrada
   echo "Guess the secret number between 1 and 1000:"
   PLAY_GAME $SECRET_NUMBER $USER_ID 0
 }
